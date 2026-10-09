@@ -66,7 +66,8 @@ jobs:
           profile: Nexus 5
           disable-animations: true
           script: |
-            set -euo pipefail
+            # Emulator runner executes its script with /bin/sh (dash), not bash.
+            set -eu
             adb install -r dist/jpegviewer-debug.apk
             adb shell am start -W -n com.example.jpegstream/.ViewerActivity
             sleep 2
