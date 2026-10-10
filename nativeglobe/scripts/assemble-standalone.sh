@@ -21,7 +21,7 @@ rootProject.name = 'native-glass-globe-android9'
 include ':nativeglobe'
 SETTINGS
 cat > "$DEST/README.md" <<'DOC'
-# Native Glass Globe — standalone Android 9 source
+# Native Glass Globe — standalone Android 15 source
 
 This is a **standalone Gradle project**, not a complete copy of tmp-android.
 Only the :nativeglobe module is included; :app and :jpegviewer are not required.
@@ -39,6 +39,6 @@ The included Gradle Wrapper pins Gradle 8.9, which is used in CI with Android
 Gradle Plugin 8.7.3. Avoid invoking an installed Gradle 9.x binary.
 
 APK: nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk
-Requires Android 9 (API 28) or later and a Vulkan-compatible device.
+Requires Android 15 (API 35) or later and a Vulkan-compatible device.
 DOC
 printf 'Standalone Gradle source created: %s\n' "$DEST"

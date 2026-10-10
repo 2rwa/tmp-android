@@ -1,10 +1,12 @@
-# Liquid Glass Globe — native Android 9 Vulkan prototype
+# Liquid Glass Globe — native Android 15 Vulkan prototype
 
 Independent Android application module `:nativeglobe` within `2rwa/tmp-android`.
 Uses a **native C++ Vulkan 1.0 swapchain**, not WebView or Android Canvas for 3D rendering.
 
-- Min Android API 28 (Android 9). Device needs `VK_KHR_android_surface`, graphics + present, and `VK_KHR_swapchain`.
+- Min Android API 35 (Android 15). Targets Redmi 12 5G; needs `VK_KHR_android_surface`, graphics + present, and `VK_KHR_swapchain`.
 - Java `SurfaceView` and native C++ renderer with a dedicated thread.
+- Queries Vulkan loader and physical-device versions; requests the highest instance API up to 1.3, uses the actual physical-driver API level, and displays GPU name, API version, FPS and frame time. Snapdragon 4 Gen 2 is listed by Qualcomm as Vulkan 1.1; never assume Vulkan 1.3 because Android is 15.
+- Core rendering commands and SPIR-V are still Vulkan 1.0 compatible. API version increase alone is NOT a performance optimization.
 - 7 opaque colored balls + configurable **0–64 transparent metaball droplets**.
 - Glass-to-glass soft merging using polynomial smooth union, refractive entry/exit raymarching.
 - Colored balls versus glass centers and the enclosing globe have collision constraints; **the smoothly merged glass surface can still approach an opaque sphere more closely than the center-based collision approximation**. Not a real fluid simulation.
@@ -23,7 +25,7 @@ Output `nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk`.
 
 `.github/workflows/native-glass-globe.yml`:
 - NDK and SPIR-V shader compile / APK build / manifest and assets check
-- Android 9 API 28 x86_64 emulator install and UI test
+- Android 15 API 35 x86_64 emulator install and UI test
 - Vulkan feature / status probe; screenshot retained as artifact
 
 A CI virtual GPU may not expose Vulkan; **a successful Activity smoke test is not a Vulkan graphics pass**.

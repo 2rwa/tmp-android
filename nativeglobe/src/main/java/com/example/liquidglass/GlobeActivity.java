@@ -76,8 +76,8 @@ public class GlobeActivity extends Activity implements SurfaceHolder.Callback {
         panel.setBackgroundColor(0xd5132437);panel.setPadding(dp(10),dp(6),dp(10),dp(8));
         FrameLayout.LayoutParams pp=new FrameLayout.LayoutParams(dp(225),-2,Gravity.RIGHT|Gravity.TOP);
         pp.setMargins(0,dp(22),dp(10),0);root.addView(panel,pp);
-        TextView title=text("LIQUID GLASS  •  Vulkan",14);panel.addView(title);
-        status=text("Starting native Vulkan…",11);panel.addView(status);
+        TextView title=text("LIQUID GLASS  •  Android 15",14);panel.addView(title);
+        status=text("Detecting Vulkan / GPU…",10);panel.addView(status);
         glassLabel=text("Glass droplets: 24",12);panel.addView(glassLabel);
         slider(panel,64,glassCount,n->{glassCount=n;glassLabel.setText("Glass droplets: "+n);setNative();});
         mergeLabel=text("Fusion: 0.32",12);panel.addView(mergeLabel);
@@ -89,7 +89,7 @@ public class GlobeActivity extends Activity implements SurfaceHolder.Callback {
         pause.setOnClickListener(v->{paused=!paused;pause.setText(paused?"Play":"Pause");setNative();});
         Button quality=new Button(this);quality.setText("240p");buttons.addView(quality,new LinearLayout.LayoutParams(0,dp(48),1));
         quality.setOnClickListener(v->{resolution=(resolution+1)%3;changeResolution();quality.setText(new String[]{"160p","240p","320p"}[resolution]);});
-        TextView foot=text("Drag background to orbit · Android 9+",10);panel.addView(foot);
+        TextView foot=text("Drag to orbit · Android 15 · GPU auto-detect",10);panel.addView(foot);
         setContentView(root);
         changeResolution();setNative();handler.post(updateStatus);
     }

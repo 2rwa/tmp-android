@@ -6,6 +6,7 @@
 #include <cstdio>
 
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"LiquidGlass",__VA_ARGS__)
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,"LiquidGlass",__VA_ARGS__)
 void vkCheck(VkResult value,const char* name){if(value!=VK_SUCCESS){
     LOGE("%s failed: %d",name,value);throw std::runtime_error(name);
 }}
@@ -29,7 +30,19 @@ static uint32_t findMemory(VkPhysicalDevice physical,uint32_t bits,VkMemoryPrope
 bool Engine::init(){
     try {
         VkApplicationInfo info{VK_STRUCTURE_TYPE_APPLICATION_INFO};
-        info.pApplicationName="LiquidGlass";info.apiVersion=VK_API_VERSION_1_0;
+        info.pApplicationName="LiquidGlass";
+        // Probe loader first; Android 15 supports up to Vulkan 1.3, but GPU drivers may not.
+        auto versionQuery=reinterpret_cast<PFN_vkEnumerateInstanceVersion>(
+            vkGetInstanceProcAddr(VK_NULL_HANDLE,"vkEnumerateInstanceVersion"));
+        if(versionQuery){
+            uint32_t detected=VK_API_VERSION_1_0;
+            if(versionQuery(&detected)==VK_SUCCESS)loaderApi=detected;
+        }
+        instanceApi=std::min(loaderApi,VK_API_VERSION_1_3);
+        info.apiVersion=instanceApi;
+        LOGI("Vulkan loader %u.%u / instance %u.%u",
+             VK_VERSION_MAJOR(loaderApi),VK_VERSION_MINOR(loaderApi),
+             VK_VERSION_MAJOR(instanceApi),VK_VERSION_MINOR(instanceApi));
         const char *instanceExtensions[]={VK_KHR_SURFACE_EXTENSION_NAME,VK_KHR_ANDROID_SURFACE_EXTENSION_NAME};
         VkInstanceCreateInfo ic{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
         ic.pApplicationInfo=&info;ic.enabledExtensionCount=2;ic.ppEnabledExtensionNames=instanceExtensions;
@@ -60,6 +73,17 @@ bool Engine::init(){
             if(physical)break;
         }
         if(!physical)throw std::runtime_error("No Vulkan GPU with presentation support");
+        VkPhysicalDeviceProperties props{};
+        vkGetPhysicalDeviceProperties(physical,&props);
+        gpuApi=std::min(instanceApi,props.apiVersion);
+        char label[512];
+        std::snprintf(label,sizeof(label),
+            "Vulkan %u.%u | %s | driver %u.%u | loader %u.%u",
+            VK_VERSION_MAJOR(gpuApi),VK_VERSION_MINOR(gpuApi),props.deviceName,
+            VK_VERSION_MAJOR(props.apiVersion),VK_VERSION_MINOR(props.apiVersion),
+            VK_VERSION_MAJOR(loaderApi),VK_VERSION_MINOR(loaderApi));
+        gpuInfo=label;
+        LOGI("%s",gpuInfo.c_str());
         float priority=1.f;
         VkDeviceQueueCreateInfo dq{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
         dq.queueFamilyIndex=queueIndex;dq.queueCount=1;dq.pQueuePriorities=&priority;

@@ -24,6 +24,8 @@ struct Engine {
     VkDevice device=VK_NULL_HANDLE;
     VkQueue queue=VK_NULL_HANDLE;
     uint32_t queueIndex=0;
+    uint32_t loaderApi=VK_API_VERSION_1_0,instanceApi=VK_API_VERSION_1_0,gpuApi=VK_API_VERSION_1_0;
+    std::string gpuInfo;
     VkSwapchainKHR swap=VK_NULL_HANDLE;
     VkFormat format=VK_FORMAT_UNDEFINED;
     VkExtent2D size{};

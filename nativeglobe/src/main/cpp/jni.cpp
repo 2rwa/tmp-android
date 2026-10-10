@@ -41,7 +41,9 @@ Java_com_example_liquidglass_GlobeActivity_nativeStart(JNIEnv* env,jclass,jobjec
         if(!engine.init()){engine.shutdown();ANativeWindow_release(window);running=false;return;}
         int lastCount=-1;
         auto previous=std::chrono::steady_clock::now();
-        setStatus("VULKAN ACTIVE · Native GPU");
+        setStatus(engine.gpuInfo.c_str());
+        auto fpsStart=std::chrono::steady_clock::now();
+        unsigned fpsFrames=0;
         while(running){
             int count=glass.load();
             if(lastCount!=count){engine.setupParticles(count);lastCount=count;}
@@ -52,6 +54,16 @@ Java_com_example_liquidglass_GlobeActivity_nativeStart(JNIEnv* env,jclass,jobjec
             Uniforms u{};engine.prepareUniform(u,yaw.load(),pitch.load(),mergeWidth.load(),count);
             if(engine.mapped)std::memcpy(engine.mapped,&u,sizeof(u));
             if(!engine.draw())break;
+            ++fpsFrames;
+            float elapsed=std::chrono::duration<float>(
+                std::chrono::steady_clock::now()-fpsStart).count();
+            if(elapsed>=1.0f){
+                char label[640];
+                std::snprintf(label,sizeof(label),"%s | %.1f FPS / %.1f ms",
+                    engine.gpuInfo.c_str(),fpsFrames/elapsed,elapsed*1000.f/fpsFrames);
+                setStatus(label);
+                fpsFrames=0;fpsStart=std::chrono::steady_clock::now();
+            }
             std::this_thread::sleep_for(std::chrono::milliseconds(7));
         }
         engine.shutdown();ANativeWindow_release(window);

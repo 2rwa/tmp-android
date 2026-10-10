@@ -1,4 +1,4 @@
-name: Native Glass Globe Android 9
+name: Native Glass Globe Android 15
 on:
   push:
     branches: [main]
@@ -31,14 +31,15 @@ jobs:
             'ndk;27.2.12479018' 'cmake;3.22.1'
       - name: Build native Vulkan APK and SPIR-V
         run: gradle --no-daemon :nativeglobe:assembleDebug
-      - name: Check Android 9 manifest, native binaries and shader assets
+      - name: Check Android 15 manifest, native binaries and shader assets
         shell: bash
         run: |
           set -euo pipefail
           APK=nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk
           test -s "$APK"
           "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee badging.txt
-          grep -F "sdkVersion:'28'" badging.txt
+          grep -F "sdkVersion:'35'" badging.txt
+          grep -F "targetSdkVersion:'35'" badging.txt
           grep -F 'com.example.liquidglass.GlobeActivity' badging.txt
           unzip -l "$APK" | tee apk-files.txt
           grep -F 'lib/arm64-v8a/libliquidglass.so' apk-files.txt
@@ -62,23 +63,23 @@ jobs:
           chmod +x "$OUT/gradlew"
           "$OUT/gradlew" --no-daemon -p "$OUT" :nativeglobe:assembleDebug
           test -s "$OUT/nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk"
-          (cd "$OUT" && zip -q -r "$GITHUB_WORKSPACE/native-glass-globe-android9-source.zip" \
+          (cd "$OUT" && zip -q -r "$GITHUB_WORKSPACE/native-glass-globe-android15-source.zip" \
             settings.gradle build.gradle gradle.properties README.md \
             gradlew gradlew.bat gradle/wrapper \
             nativeglobe/build.gradle nativeglobe/README.md nativeglobe/src)
-          unzip -l native-glass-globe-android9-source.zip | tee source-list.txt
-          unzip -l native-glass-globe-android9-source.zip | grep -F 'gradle/wrapper/gradle-wrapper.jar'
+          unzip -l native-glass-globe-android15-source.zip | tee source-list.txt
+          unzip -l native-glass-globe-android15-source.zip | grep -F 'gradle/wrapper/gradle-wrapper.jar'
       - uses: actions/upload-artifact@v4
         with:
-          name: native-glass-globe-android9-standalone-source
-          path: native-glass-globe-android9-source.zip
+          name: native-glass-globe-android15-standalone-source
+          path: native-glass-globe-android15-source.zip
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
-          name: native-glass-globe-android9-debug-apk
+          name: native-glass-globe-android15-debug-apk
           path: nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk
           if-no-files-found: error
-  android9-emulator:
+  android15-emulator:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -86,12 +87,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: native-glass-globe-android9-debug-apk
+          name: native-glass-globe-android15-debug-apk
           path: dist
-      - name: Start Android 9 and exercise native Activity
+      - name: Start Android 15 and exercise native Activity
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 28
+          api-level: 35
           arch: x86_64
           target: default
           profile: Nexus 6
@@ -107,6 +108,7 @@ jobs:
             grep -F 'Glass droplets: 24' ui.xml
             grep -F 'Fusion: 0.32' ui.xml
             grep -F 'Speed: 1.0' ui.xml
+            grep -F 'Android 15' ui.xml
             adb shell screencap -p /sdcard/globe.png
             adb pull /sdcard/globe.png globe.png
             adb logcat -d -s LiquidGlass:I > vulkan-device.log || true
@@ -115,7 +117,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: native-glass-globe-android9-emulator-evidence
+          name: native-glass-globe-android15-emulator-evidence
           path: |
             globe.png
             ui.xml
