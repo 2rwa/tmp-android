@@ -17,7 +17,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories { google(); mavenCentral() }
 }
-rootProject.name = 'native-glass-globe-android9'
+rootProject.name = 'native-glass-globe-android15'
 include ':nativeglobe'
 SETTINGS
 cat > "$DEST/README.md" <<'DOC'

@@ -63,16 +63,26 @@ jobs:
           chmod +x "$OUT/gradlew"
           "$OUT/gradlew" --no-daemon -p "$OUT" :nativeglobe:assembleDebug
           test -s "$OUT/nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk"
-          (cd "$OUT" && zip -q -r "$GITHUB_WORKSPACE/native-glass-globe-android15-source.zip" \
-            settings.gradle build.gradle gradle.properties README.md \
-            gradlew gradlew.bat gradle/wrapper \
-            nativeglobe/build.gradle nativeglobe/README.md nativeglobe/src)
-          unzip -l native-glass-globe-android15-source.zip | tee source-list.txt
-          unzip -l native-glass-globe-android15-source.zip | grep -F 'gradle/wrapper/gradle-wrapper.jar'
+          # Upload the project directory directly. Artifacts are ZIPs already:
+          # uploading a second .zip produced an unnecessarily nested ZIP.
+          STAGE="$RUNNER_TEMP/native-glass-globe-standalone-download"
+          mkdir -p "$STAGE/nativeglobe"
+          cp "$OUT/settings.gradle" "$OUT/build.gradle" "$OUT/gradle.properties" "$OUT/README.md" \
+            "$OUT/gradlew" "$OUT/gradlew.bat" "$STAGE/"
+          cp -a "$OUT/gradle" "$STAGE/"
+          cp "$OUT/nativeglobe/build.gradle" "$OUT/nativeglobe/README.md" "$STAGE/nativeglobe/"
+          cp -a "$OUT/nativeglobe/src" "$STAGE/nativeglobe/"
+          grep -Fx "rootProject.name = 'native-glass-globe-android15'" "$STAGE/settings.gradle"
+          test -s "$STAGE/gradle/wrapper/gradle-wrapper.jar"
+          test -s "$STAGE/nativeglobe/src/main/shaders/globe.frag"
+          test -s "$STAGE/nativeglobe/src/main/cpp/vulkan_core.cpp"
+          test -s "$STAGE/nativeglobe/src/main/java/com/example/liquidglass/GlobeActivity.java"
+          # Regression: downloaded artifact must contain project files directly, not an inner .zip.
+          test "$(find "$STAGE" -name '*.zip' | wc -l)" -eq 0
       - uses: actions/upload-artifact@v4
         with:
           name: native-glass-globe-android15-standalone-source
-          path: native-glass-globe-android15-source.zip
+          path: ${{ runner.temp }}/native-glass-globe-standalone-download
           if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
