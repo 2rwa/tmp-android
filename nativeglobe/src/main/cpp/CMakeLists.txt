@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(liquidglass LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+add_library(liquidglass SHARED jni.cpp simulation.cpp vulkan_core.cpp vulkan_draw.cpp)
+target_compile_options(liquidglass PRIVATE -Wall -Wextra -Wno-unused-parameter)
+target_link_libraries(liquidglass PRIVATE vulkan android log)

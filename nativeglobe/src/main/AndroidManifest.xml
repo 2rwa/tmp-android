@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The launcher stays available to report missing Vulkan instead of hiding the app. -->
+    <uses-feature android:name="android.hardware.vulkan.version" android:version="0x00400000" android:required="false" />
+    <application android:label="Liquid Glass Globe" android:theme="@android:style/Theme.Material.NoActionBar" android:hasCode="true">
+        <activity android:name=".GlobeActivity" android:exported="true" android:screenOrientation="unspecified">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
