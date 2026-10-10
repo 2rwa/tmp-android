@@ -84,7 +84,7 @@ jobs:
           profile: Nexus 6
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             adb install -r dist/app-debug.apk
             adb shell am start -W -n com.example.tmpandroid/.MainActivity
             sleep 2
