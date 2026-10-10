@@ -49,6 +49,30 @@ jobs:
           unzip -p "$APK" assets/shaders/globe.frag.spv > globe.frag.spv
           "$ANDROID_HOME/ndk/27.2.12479018/shader-tools/linux-x86_64/spirv-val" --target-env vulkan1.0 globe.vert.spv
           "$ANDROID_HOME/ndk/27.2.12479018/shader-tools/linux-x86_64/spirv-val" --target-env vulkan1.0 globe.frag.spv
+      - name: Package and test standalone Gradle project
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/native-glass-globe-standalone"
+          bash nativeglobe/scripts/assemble-standalone.sh "$OUT"
+          test "$(grep -c "include ':nativeglobe'" "$OUT/settings.gradle")" = 1
+          ! grep -Eq "include.*(:app|:jpegviewer)" "$OUT/settings.gradle"
+          gradle --no-daemon -p "$OUT" wrapper --gradle-version 8.9 --distribution-type bin
+          test -s "$OUT/gradle/wrapper/gradle-wrapper.jar"
+          chmod +x "$OUT/gradlew"
+          "$OUT/gradlew" --no-daemon -p "$OUT" :nativeglobe:assembleDebug
+          test -s "$OUT/nativeglobe/build/outputs/apk/debug/nativeglobe-debug.apk"
+          (cd "$OUT" && zip -q -r "$GITHUB_WORKSPACE/native-glass-globe-android9-source.zip" \
+            settings.gradle build.gradle gradle.properties README.md \
+            gradlew gradlew.bat gradle/wrapper \
+            nativeglobe/build.gradle nativeglobe/README.md nativeglobe/src)
+          unzip -l native-glass-globe-android9-source.zip | tee source-list.txt
+          unzip -l native-glass-globe-android9-source.zip | grep -F 'gradle/wrapper/gradle-wrapper.jar'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-glass-globe-android9-standalone-source
+          path: native-glass-globe-android9-source.zip
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: native-glass-globe-android9-debug-apk
