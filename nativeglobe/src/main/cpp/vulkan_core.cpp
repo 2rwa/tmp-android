@@ -38,14 +38,34 @@ bool Engine::init(){
             uint32_t detected=VK_API_VERSION_1_0;
             if(versionQuery(&detected)==VK_SUCCESS)loaderApi=detected;
         }
-        instanceApi=std::min(loaderApi,VK_API_VERSION_1_3);
-        info.apiVersion=instanceApi;
-        LOGI("Vulkan loader %u.%u / instance %u.%u",
-             VK_VERSION_MAJOR(loaderApi),VK_VERSION_MINOR(loaderApi),
-             VK_VERSION_MAJOR(instanceApi),VK_VERSION_MINOR(instanceApi));
         const char *instanceExtensions[]={VK_KHR_SURFACE_EXTENSION_NAME,VK_KHR_ANDROID_SURFACE_EXTENSION_NAME};
         VkInstanceCreateInfo ic{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
         ic.pApplicationInfo=&info;ic.enabledExtensionCount=2;ic.ppEnabledExtensionNames=instanceExtensions;
+        // Probe GPUs with a Vulkan 1.0 instance first. Android 15's loader can
+        // advertise 1.3 while the Redmi 12 5G's GPU still exposes Vulkan 1.1.
+        // Never request a newer instance API than the GPU driver supports.
+        info.apiVersion=VK_API_VERSION_1_0;
+        VkInstance probe=VK_NULL_HANDLE;
+        vkCheck(vkCreateInstance(&ic,nullptr,&probe),"vkCreateInstance (probe)");
+        uint32_t supportedGpu=VK_API_VERSION_1_0,probeCount=0;
+        if(vkEnumeratePhysicalDevices(probe,&probeCount,nullptr)==VK_SUCCESS && probeCount){
+            std::vector<VkPhysicalDevice> probeDevices(probeCount);
+            if(vkEnumeratePhysicalDevices(probe,&probeCount,probeDevices.data())==VK_SUCCESS){
+                supportedGpu=VK_API_VERSION_1_3;
+                for(VkPhysicalDevice adapter:probeDevices){
+                    VkPhysicalDeviceProperties p{};
+                    vkGetPhysicalDeviceProperties(adapter,&p);
+                    supportedGpu=std::min(supportedGpu,p.apiVersion);
+                }
+            }
+        }
+        vkDestroyInstance(probe,nullptr);
+        instanceApi=std::min(loaderApi,std::min(supportedGpu,VK_API_VERSION_1_3));
+        info.apiVersion=instanceApi;
+        LOGI("Vulkan loader %u.%u / GPU probe %u.%u / instance %u.%u",
+             VK_VERSION_MAJOR(loaderApi),VK_VERSION_MINOR(loaderApi),
+             VK_VERSION_MAJOR(supportedGpu),VK_VERSION_MINOR(supportedGpu),
+             VK_VERSION_MAJOR(instanceApi),VK_VERSION_MINOR(instanceApi));
         vkCheck(vkCreateInstance(&ic,nullptr,&instance),"vkCreateInstance");
         VkAndroidSurfaceCreateInfoKHR surfaceInfo{VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR};
         surfaceInfo.window=window;
