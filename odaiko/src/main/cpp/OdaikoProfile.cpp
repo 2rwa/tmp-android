@@ -90,7 +90,7 @@ void initialize(int sampleRate,int quality,double roomWet){
   double(sr),dt,area,V,bulk,clamp(dt*3500*(1-.10*.75),0,1),1.,
   clamp(dt/(.42*.08),0,1), (1-.92)*.7,.055,1.,
   .10,.18,.20,.16,effectiveK,1.5*(.94+.12*.72),.10+.75*.06,
-  std::max(.03,.31*std::sqrt(.54/.52)),.31,std::exp(-dt/.0032),hard,0.,
+  std::max(.03,.31*std::sqrt(.54/.52)),.31,std::exp(-dt/.0032),hardness,0.,
   1/1.5,1.,.48,.12,.16,0.,.08,.060,
   1.2*343*343*.08,
   1/std::sqrt(nf),1/std::sqrt(nr),1/std::sqrt(ns),1/std::sqrt(nc),
