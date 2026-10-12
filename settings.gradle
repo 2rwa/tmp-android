@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = 'tmp-android'
-include ':app', ':jpegviewer', ':nativeglobe'
+include ':app', ':jpegviewer', ':nativeglobe', ':odaiko'

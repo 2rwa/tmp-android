@@ -1,0 +1,101 @@
+name: Wadaiko Native Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'odaiko/**'
+      - 'settings.gradle'
+      - '.github/workflows/odaiko-native.yml'
+  pull_request:
+    paths:
+      - 'odaiko/**'
+      - 'settings.gradle'
+      - '.github/workflows/odaiko-native.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Host physical-DSP regression
+        run: bash odaiko/scripts/test-native-dsp.sh
+      - name: Install Android toolchain
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"             'platforms;android-35' 'build-tools;35.0.0'             'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Build Oboe/AAudio APK
+        run: gradle --no-daemon :odaiko:assembleDebug
+      - name: Verify manifest and native binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=odaiko/build/outputs/apk/debug/odaiko-debug.apk
+          test -s "$APK"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK" | tee odaiko-badging.txt
+          grep -F "sdkVersion:'28'" odaiko-badging.txt
+          grep -F "targetSdkVersion:'35'" odaiko-badging.txt
+          grep -F 'com.example.odaiko.TaikoActivity' odaiko-badging.txt
+          unzip -l "$APK" | tee odaiko-files.txt
+          grep -F 'lib/arm64-v8a/libodaiko.so' odaiko-files.txt
+          grep -F 'lib/x86_64/libodaiko.so' odaiko-files.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wadaiko-native-android9-debug-apk
+          path: odaiko/build/outputs/apk/debug/odaiko-debug.apk
+          if-no-files-found: error
+
+  emulator:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: wadaiko-native-android9-debug-apk
+          path: dist
+      - name: Android 9 native audio smoke
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 28
+          arch: x86_64
+          target: default
+          profile: Nexus 6
+          disable-animations: true
+          script: |
+            set -eu
+            adb install -r dist/odaiko-debug.apk
+            adb shell am start -W -n com.example.odaiko/.TaikoActivity
+            sleep 4
+            adb shell uiautomator dump /sdcard/odaiko.xml
+            adb pull /sdcard/odaiko.xml odaiko-ui.xml
+            grep -F 'text="WADAIKO"' odaiko-ui.xml
+            grep -F 'text="START"' odaiko-ui.xml
+            grep -F 'text="DON"' odaiko-ui.xml
+            grep -F 'text="KA"' odaiko-ui.xml
+            adb shell pidof com.example.odaiko
+            adb shell screencap -p /sdcard/odaiko.png
+            adb pull /sdcard/odaiko.png odaiko.png
+            adb logcat -d -s AndroidRuntime:E > odaiko-crash.log
+            ! grep -F 'FATAL EXCEPTION' odaiko-crash.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wadaiko-native-emulator-evidence
+          path: |
+            odaiko-ui.xml
+            odaiko.png
+            odaiko-crash.log
+          if-no-files-found: warn
