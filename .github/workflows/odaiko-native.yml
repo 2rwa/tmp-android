@@ -55,6 +55,31 @@ jobs:
           name: wadaiko-native-android9-debug-apk
           path: odaiko/build/outputs/apk/debug/odaiko-debug.apk
           if-no-files-found: error
+      - name: Prepare and validate standalone source project
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE="$RUNNER_TEMP/wadaiko-standalone-work"
+          DIST="$RUNNER_TEMP/wadaiko-standalone-download"
+          bash odaiko/scripts/package-standalone.sh "$SOURCE"
+          gradle --no-daemon -p "$SOURCE" wrapper --gradle-version 8.9 --distribution-type bin
+          chmod +x "$SOURCE/gradlew"
+          "$SOURCE/gradlew" --no-daemon -p "$SOURCE" :odaiko:assembleDebug
+          test -s "$SOURCE/odaiko/build/outputs/apk/debug/odaiko-debug.apk"
+          mkdir -p "$DIST"
+          rsync -a --exclude='/.gradle/' --exclude='/build/' --exclude='/odaiko/build/' --exclude='/odaiko/.cxx/' "$SOURCE/" "$DIST/"
+          test -s "$DIST/gradlew"
+          test -s "$DIST/gradle/wrapper/gradle-wrapper.jar"
+          test -s "$DIST/odaiko/src/main/cpp/OdaikoCore.c"
+          test -s "$DIST/odaiko/src/main/java/com/example/odaiko/TaikoActivity.java"
+          test ! -e "$DIST/odaiko/build"
+          test ! -e "$DIST/odaiko/.cxx"
+          test "$(grep -c "^include ':odaiko'$" "$DIST/settings.gradle")" = 1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wadaiko-native-standalone-source
+          path: ${{ runner.temp }}/wadaiko-standalone-download
+          if-no-files-found: error
 
   emulator:
     needs: build
