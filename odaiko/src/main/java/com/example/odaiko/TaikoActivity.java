@@ -30,7 +30,7 @@ public final class TaikoActivity extends Activity {
  private final Button[] arts=new Button[5];
  int calibrationIndex=-1;
  private final float[][] calibrationSamples=new float[8][2];
- float pLo=0,pHi=0,cLo=0,cHi=0;private boolean pValid=false,cValid=false;
+ float pLo=0,pHi=0,cLo=0,cHi=0;boolean pValid=false,cValid=false;
  SharedPreferences prefs;
  private static final int TEXT=Color.rgb(248,234,211),BG=Color.rgb(16,12,10),PANEL=Color.rgb(44,31,23),GOLD=Color.rgb(214,163,88);
  static float clamp(float x,float lo,float hi){return Math.max(lo,Math.min(hi,x));}
